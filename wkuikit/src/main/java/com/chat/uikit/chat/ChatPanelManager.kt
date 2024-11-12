@@ -22,6 +22,7 @@ import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.Toast
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.ContextCompat
@@ -41,6 +42,7 @@ import com.chat.base.endpoint.EndpointCategory
 import com.chat.base.endpoint.EndpointManager
 import com.chat.base.endpoint.EndpointSID
 import com.chat.base.endpoint.entity.ChatChooseContacts
+import com.chat.base.endpoint.entity.ChatFunctionMenu
 import com.chat.base.endpoint.entity.ChatToolBarMenu
 import com.chat.base.endpoint.entity.ChooseChatMenu
 import com.chat.base.endpoint.entity.InitInputPanelMenu
@@ -72,6 +74,8 @@ import com.chat.base.views.FullyGridLayoutManager
 import com.chat.base.views.NoEventRecycleView
 import com.chat.uikit.R
 import com.chat.uikit.chat.adapter.WKChatToolBarAdapter
+import com.chat.uikit.chat.face.WKVoiceViewManager
+import com.chat.uikit.chat.manager.FaceManger
 import com.chat.uikit.chat.manager.SendMsgEntity
 import com.chat.uikit.chat.manager.WKSendMsgUtils
 import com.chat.uikit.chat.msgmodel.WKMultiForwardContent
@@ -132,6 +136,8 @@ class ChatPanelManager(
     private val editText: ContactEditText = parentView.findViewById(R.id.editText)
     private val hitTv: AppCompatTextView = parentView.findViewById(R.id.hitTv)
     private val sendIV: AppCompatImageView = parentView.findViewById(R.id.sendIV)
+    private val myEmojiTv: AppCompatImageView = parentView.findViewById(R.id.myEmojiTv)
+    private val myVoiceTv: AppCompatImageView = parentView.findViewById(R.id.myVoiceTv)
     private val markdownIv: AppCompatImageView = parentView.findViewById(R.id.markdownIv)
     private val flameIV: AppCompatImageView = parentView.findViewById(R.id.flameIV)
     private val menuIv: AppCompatImageView = parentView.findViewById(R.id.menuIv)
@@ -461,7 +467,7 @@ class ChatPanelManager(
                 }
                 flame = mChannel.flame
                 CommonAnim.getInstance().showOrHide(flameIV, flame == 1, true)
-                markdownIv.visibility = if (flame == 1) View.GONE else View.VISIBLE
+//                markdownIv.visibility = if (flame == 1) View.GONE else View.VISIBLE
                 showFlame(mChannel.flameSecond)
             }
         }
@@ -718,7 +724,7 @@ class ChatPanelManager(
             CommonAnim.getInstance().showOrHide(flameIV, true, true)
             markdownIv.visibility = View.GONE
         } else
-            markdownIv.visibility = View.VISIBLE
+            markdownIv.visibility = View.GONE
         seekBarView?.setDelegate(object : SeekBarView.SeekBarViewDelegate {
             override fun onSeekBarDrag(stop: Boolean, progress: Float) {
                 if (stop)
@@ -1256,15 +1262,54 @@ class ChatPanelManager(
         SingleClickUtil.onSingleClick(markdownIv) {
             EndpointManager.getInstance().invoke("show_rich_edit", iConversationContext)
         }
+        myEmojiTv.setOnClickListener{
+            Toast.makeText(iConversationContext.chatActivity, "请选择表情", Toast.LENGTH_SHORT)
+            val emojiToolBar = ChatToolBarMenu(
+                "emojiToolBar",
+                R.mipmap.icon_chat_toolbar_emoji,
+                R.mipmap.icon_chat_toolbar_emoji,
+                getEmojiLayout()
+            ) { _, _ -> }
+            toolBarClick(emojiToolBar, 0, toolBarAdapter!!)
+        }
+        myVoiceTv.setOnClickListener{
+            Toast.makeText(iConversationContext.chatActivity, "请长按录音", Toast.LENGTH_SHORT)
+
+            val voiceView = WKVoiceViewManager.getInstance().getVoiceView(iConversationContext)
+            val voiceToolBar = ChatToolBarMenu(
+                "wk_chat_toolbar_voice",
+                R.mipmap.icon_chat_toolbar_voice,
+                R.mipmap.icon_chat_toolbar_voice,
+                voiceView
+            ) { _, _ -> }
+        SingleClickUtil.determineTriggerSingleClick(voiceView, 500) {
+                checkPermission(
+                    iConversationContext.chatActivity,
+                    voiceToolBar,
+                    0,
+                    toolBarAdapter!!
+                )
+            return@determineTriggerSingleClick
+            }
+//            checkPermission(
+//                iConversationContext.chatActivity,
+//                mChatToolBarMenu,
+//                position,
+//                toolBarAdapter!!
+//            )
+//            return@determineTriggerSingleClick
+        }
+
+
         sendIV.setOnClickListener {
             var content = StringUtils.replaceBlank(editText.text.toString())
             if (!TextUtils.isEmpty(content)) {
                 content = editText.text.toString()
-                sendIV.colorFilter = PorterDuffColorFilter(
-                    ContextCompat.getColor(
-                        iConversationContext.chatActivity, R.color.popupTextColor
-                    ), PorterDuff.Mode.MULTIPLY
-                )
+//                sendIV.colorFilter = PorterDuffColorFilter(
+//                    ContextCompat.getColor(
+//                        iConversationContext.chatActivity, R.color.popupTextColor
+//                    ), PorterDuff.Mode.MULTIPLY
+//                )
                 val drawable = EmojiManager.getInstance()
                     .getDrawable(iConversationContext.chatActivity, content)
                 if (drawable != null && iConversationContext.replyMsg == null) {
@@ -1313,6 +1358,33 @@ class ChatPanelManager(
                 if (chatTopView?.visibility == View.VISIBLE) {
                     CommonAnim.getInstance().animateClose(chatTopView)
                 }
+            }else{
+                //输入框为空。则弹出底部更多菜单
+                val path = ImageUtils.getInstance().newestPhoto
+                val oldPath =
+                    WKSharedPreferencesUtil.getInstance().getSP("new_img_path")
+                if (!TextUtils.isEmpty(path) && TextUtils.isEmpty(oldPath)
+                    || !TextUtils.isEmpty(path) && !TextUtils.isEmpty(oldPath) && oldPath != path
+                ) {
+                    Handler(Looper.myLooper()!!).postDelayed({
+                        showNewImgDialog(path)
+                    }, 300)
+                }
+                val moreView = FaceManger.getInstance().getFunctionView(
+                    iConversationContext
+                ) { chatFunctionMenu: ChatFunctionMenu ->
+                    chatFunctionMenu.iChatFunctionCLick.onClick(
+                        iConversationContext
+                    )
+                }
+                val moreToolBar = ChatToolBarMenu(
+                    "wk_chat_toolbar_more",
+                    R.mipmap.icon_chat_toolbar_voice,
+                    R.mipmap.icon_chat_toolbar_voice,
+                    moreView
+                ) { _, _ -> }
+                toolBarClick(moreToolBar, 6, toolBarAdapter!!)
+
             }
         }
         editText.addTextChangedListener(object : TextWatcher {
@@ -1325,38 +1397,40 @@ class ChatPanelManager(
                 this.start = start
                 this.count = count
                 if (!TextUtils.isEmpty(s.toString())) {
+                    sendIV.setImageResource(R.mipmap.icon_chat_send)
                     val content = StringUtils.replaceBlank(s.toString())
 //                    val content = s.toString().replace("\\s*|\r|\n|\t", "")
-                    if (!isShowSendBtn && !TextUtils.isEmpty(content)) {
-                        CommonAnim.getInstance().animImageView(sendIV)
-                    }
+//                    if (!isShowSendBtn && !TextUtils.isEmpty(content)) {
+//                        CommonAnim.getInstance().animImageView(sendIV)
+//                    }
                     isShowSendBtn = true
                     if (TextUtils.isEmpty(content)) {
-                        sendIV.colorFilter = PorterDuffColorFilter(
-                            ContextCompat.getColor(
-                                iConversationContext.chatActivity, R.color.popupTextColor
-                            ), PorterDuff.Mode.MULTIPLY
-                        )
+//                        sendIV.colorFilter = PorterDuffColorFilter(
+//                            ContextCompat.getColor(
+//                                iConversationContext.chatActivity, R.color.popupTextColor
+//                            ), PorterDuff.Mode.MULTIPLY
+//                        )
                     } else {
-                        sendIV.colorFilter = PorterDuffColorFilter(
-                            Theme.colorAccount, PorterDuff.Mode.MULTIPLY
-                        )
+//                        sendIV.colorFilter = PorterDuffColorFilter(
+//                            Theme.colorAccount, PorterDuff.Mode.MULTIPLY
+//                        )
                     }
-                    CommonAnim.getInstance().showOrHide(markdownIv, false, true)
+//                    CommonAnim.getInstance().showOrHide(markdownIv, false, true)
                     if (flame == 1) {
                         CommonAnim.getInstance().showOrHide(flameIV, false, true)
                     }
                 } else {
-                    CommonAnim.getInstance().showOrHide(markdownIv, true, true)
+                    sendIV.setImageResource(R.mipmap.icon_chat_more)
+//                    CommonAnim.getInstance().showOrHide(markdownIv, true, true)
                     if (flame == 1) {
                         CommonAnim.getInstance().showOrHide(flameIV, true, true)
                     }
                     isShowSendBtn = false
-                    sendIV.colorFilter = PorterDuffColorFilter(
-                        ContextCompat.getColor(
-                            iConversationContext.chatActivity, R.color.popupTextColor
-                        ), PorterDuff.Mode.MULTIPLY
-                    )
+//                    sendIV.colorFilter = PorterDuffColorFilter(
+//                        ContextCompat.getColor(
+//                            iConversationContext.chatActivity, R.color.popupTextColor
+//                        ), PorterDuff.Mode.MULTIPLY
+//                    )
                 }
                 val selectionStart = editText.selectionStart
                 val selectionEnd = editText.selectionEnd

@@ -263,8 +263,8 @@ public class WKUIKitApplication {
             intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
             mContext.get().startActivity(intent);
         }));
-
-        // 添加聊天工具栏菜单语音
+//
+//        // 添加聊天工具栏菜单语音
         EndpointManager.getInstance().setMethod(EndpointCategory.wkChatToolBar + "_voice", EndpointCategory.wkChatToolBar, 97, object -> {
             IConversationContext iConversationContext = (IConversationContext) object;
             View voiceView = WKVoiceViewManager.getInstance().getVoiceView(iConversationContext);

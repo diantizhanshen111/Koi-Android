@@ -26,14 +26,21 @@ import com.chat.base.utils.ActManagerUtils
 import com.chat.base.utils.WKPlaySound
 import com.chat.base.utils.WKTimeUtils
 import com.chat.base.utils.language.WKMultiLanguageUtil
+import com.chat.file.WKFileApplication
+import com.chat.groupmanage.WKGroupManageApplication
 import com.chat.login.WKLoginApplication
+import com.chat.map.WKMapApplication
 import com.chat.push.WKPushApplication
+import com.chat.rtc.WKUIRTCApplication
 import com.chat.scan.WKScanApplication
 import com.chat.uikit.TabActivity
 import com.chat.uikit.WKUIKitApplication
 import com.chat.uikit.chat.manager.WKIMUtils
 import com.chat.uikit.user.service.UserModel
+import com.chat.video.WKVideoApplication
+import org.webrtc.PeerConnection
 import kotlin.system.exitProcess
+
 
 class TSApplication : MultiDexApplication() {
     override fun onCreate() {
@@ -76,14 +83,19 @@ class TSApplication : MultiDexApplication() {
         WKScanApplication.getInstance().init(this)
         WKUIKitApplication.getInstance().init(this)
         WKPushApplication.getInstance().init(getAppPackageName(), this)
+        WKUIRTCApplication.init(getList())// 音视频
+        WKFileApplication.getInstance().init(this);
+        WKGroupManageApplication.getInstance().init();
+        WKMapApplication.init();
+        WKVideoApplication.getInstance().init(this);
         addAppFrontBack()
         addListener()
     }
 
     private fun initApi() {
-        var apiURL = WKSharedPreferencesUtil.getInstance().getSP("api_base_url")
+        var apiURL = "http://154.91.65.37:8090";
         if (TextUtils.isEmpty(apiURL)) {
-            apiURL = "https://api.botgate.cn"
+            apiURL = "#"
             WKApiConfig.initBaseURL(apiURL)
         } else {
             WKApiConfig.initBaseURLIncludeIP(apiURL)
@@ -92,6 +104,18 @@ class TSApplication : MultiDexApplication() {
 
     private fun getAppPackageName(): String {
         return "com.xinbida.tsdd.demo"
+    }
+    private fun getList(): ArrayList<PeerConnection.IceServer> {
+        val iceServer = PeerConnection.IceServer.builder(
+            // rtc服务器地址
+            "turn:127.0.0.1:3478?transport=udp"
+            // 用户名
+        ).setUsername("adminis").setPassword(
+            "adminis" //密码
+        ).createIceServer()
+        val iceServers: ArrayList<PeerConnection.IceServer> = ArrayList()
+        iceServers.add(iceServer)
+        return iceServers
     }
 
     private fun getProcessName(cxt: Context, pid: Int): String? {

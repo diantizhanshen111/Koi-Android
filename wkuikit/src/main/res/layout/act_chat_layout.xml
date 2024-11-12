@@ -137,7 +137,10 @@
                             android:id="@+id/chatView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:padding="10dp">
+                            android:paddingBottom="10dp"
+                            android:paddingTop="10dp"
+                            android:paddingLeft="2dp"
+                            android:paddingRight="10dp">
 
                             <LinearLayout
                                 android:id="@+id/menuView"
@@ -161,6 +164,20 @@
                                         tools:ignore="TooDeepLayout" />
                                 </LinearLayout>
                             </LinearLayout>
+
+                            <FrameLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="bottom"
+                                android:animateLayoutChanges="true">
+                                <androidx.appcompat.widget.AppCompatImageView
+                                    android:id="@+id/myVoiceTv"
+                                    android:layout_width="35dp"
+                                    android:layout_height="35dp"
+                                    android:padding="5dp"
+                                    android:src="@mipmap/icon_chat_toolbar_voice"
+                                    android:visibility="visible" />
+                            </FrameLayout>
 
                             <RelativeLayout
                                 android:layout_width="0dp"
@@ -225,7 +242,7 @@
                                         android:layout_marginEnd="10dp"
                                         android:layout_marginBottom="3dp"
                                         android:src="@mipmap/ic_a"
-                                        android:visibility="visible" />
+                                        android:visibility="gone" />
                                 </LinearLayout>
 
                             </RelativeLayout>
@@ -236,20 +253,36 @@
                                 android:layout_height="1dp"
                                 android:visibility="gone" />
 
+
+
+
                             <FrameLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="bottom"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginStart="5dp"
                                 android:animateLayoutChanges="true">
+                                <androidx.appcompat.widget.AppCompatImageView
+                                    android:id="@+id/myEmojiTv"
+                                    android:layout_width="35dp"
+                                    android:layout_height="35dp"
+                                    android:padding="5dp"
+                                    android:src="@mipmap/icon_chat_toolbar_emoji"
+                                    android:visibility="visible" />
+                            </FrameLayout>
 
+                            <FrameLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="bottom"
+                                android:layout_marginStart="5dp"
+                                android:animateLayoutChanges="true">
                                 <androidx.appcompat.widget.AppCompatImageView
                                     android:id="@+id/sendIV"
                                     android:layout_width="35dp"
                                     android:layout_height="35dp"
                                     android:padding="5dp"
-                                    android:src="@mipmap/icon_chat_send"
-                                    android:tint="@color/popupTextColor"
+                                    android:src="@mipmap/icon_chat_more"
                                     android:visibility="visible" />
                             </FrameLayout>
                         </LinearLayout>
@@ -259,6 +292,7 @@
                         android:id="@+id/toolbarRecyclerView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:visibility="gone"
                         android:background="@color/chat_face_tab_bg" />
                 </LinearLayout>
             </com.effective.android.panel.view.content.RelativeContentContainer>
